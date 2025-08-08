@@ -201,7 +201,7 @@ export default function Survey() {
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                What's your favorite feature? (Optional)
+                What&apos;s your favorite feature? (Optional)
               </label>
               <Input
                 type="text"

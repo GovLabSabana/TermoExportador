@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import Alert from '@/components/ui/Alert'
+import Link from 'next/link'
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -106,11 +107,11 @@ export default function Login() {
           </div>
           
           <div className="text-center">
-            <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
-              <a href="/register" className="font-medium text-blue-600 hover:text-blue-500">
+           <p className="text-sm text-gray-600">
+              Don&apos;t have an account?{' '}
+              <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
                 Sign up here
-              </a>
+              </Link>
             </p>
           </div>
         </form>

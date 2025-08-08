@@ -5,6 +5,8 @@ import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import Select from '@/components/ui/Select'
 import Alert from '@/components/ui/Alert'
+import Link from 'next/link'
+
 
 const certificationOptions = [
   { value: 'cert1', label: 'Certification #1' },
@@ -147,9 +149,9 @@ export default function Register() {
           <div className="text-center">
             <p className="text-sm text-gray-600">
               Already have an account?{' '}
-              <a href="/" className="font-medium text-blue-600 hover:text-blue-500">
+              <Link href="/" className="font-medium text-blue-600 hover:text-blue-500">
                 Log in here
-              </a>
+              </Link>
             </p>
           </div>
         </form>
