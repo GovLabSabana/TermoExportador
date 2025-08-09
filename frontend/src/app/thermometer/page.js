@@ -1,7 +1,7 @@
 export default function Thermometer() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    <div className="flex items-center justify-center flex-1 bg-gray-100">
       <h1 className="text-3xl font-bold text-gray-800">Termómetro</h1>
     </div>
-  )
+  );
 }

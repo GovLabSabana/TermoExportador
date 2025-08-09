@@ -10,16 +10,19 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "jose": "^6.0.12",
+    "js-cookie": "^3.0.5",
+    "next": "15.4.5",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "next": "15.4.5"
+    "zustand": "^5.0.7"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.4.5",
-    "@eslint/eslintrc": "^3"
+    "tailwindcss": "^4"
   },
   "description": "TermoExportador Frontend",
   "main": "index.js",

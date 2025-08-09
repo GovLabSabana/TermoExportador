@@ -1,97 +1,110 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import Input from '@/components/ui/Input'
-import Button from '@/components/ui/Button'
-import Select from '@/components/ui/Select'
-import RadioGroup from '@/components/ui/RadioGroup'
-import Textarea from '@/components/ui/Textarea'
-import Alert from '@/components/ui/Alert'
+import { useState } from "react";
+import Input from "@/components/ui/Input";
+import Button from "@/components/ui/Button";
+import Select from "@/components/ui/Select";
+import RadioGroup from "@/components/ui/RadioGroup";
+import Textarea from "@/components/ui/Textarea";
+import Alert from "@/components/ui/Alert";
 
 const experienceOptions = [
-  { value: 'beginner', label: 'Beginner (0-2 years)' },
-  { value: 'intermediate', label: 'Intermediate (3-5 years)' },
-  { value: 'advanced', label: 'Advanced (6-10 years)' },
-  { value: 'expert', label: 'Expert (10+ years)' }
-]
+  { value: "beginner", label: "Beginner (0-2 years)" },
+  { value: "intermediate", label: "Intermediate (3-5 years)" },
+  { value: "advanced", label: "Advanced (6-10 years)" },
+  { value: "expert", label: "Expert (10+ years)" },
+];
 
 const satisfactionOptions = [
-  { value: '1', label: 'Very Dissatisfied' },
-  { value: '2', label: 'Dissatisfied' },
-  { value: '3', label: 'Neutral' },
-  { value: '4', label: 'Satisfied' },
-  { value: '5', label: 'Very Satisfied' }
-]
+  { value: "1", label: "Very Dissatisfied" },
+  { value: "2", label: "Dissatisfied" },
+  { value: "3", label: "Neutral" },
+  { value: "4", label: "Satisfied" },
+  { value: "5", label: "Very Satisfied" },
+];
 
 const frequencyOptions = [
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'rarely', label: 'Rarely' },
-  { value: 'never', label: 'Never' }
-]
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "rarely", label: "Rarely" },
+  { value: "never", label: "Never" },
+];
 
 export default function Survey() {
   const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    age: '',
-    experience: '',
-    satisfaction: '',
-    frequency: '',
-    favoriteFeature: '',
-    suggestions: '',
-    recommendation: ''
-  })
-  const [alert, setAlert] = useState(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+    fullName: "",
+    email: "",
+    age: "",
+    experience: "",
+    satisfaction: "",
+    frequency: "",
+    favoriteFeature: "",
+    suggestions: "",
+    recommendation: "",
+  });
+  const [alert, setAlert] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
+    const { name, value } = e.target;
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
-    }))
-  }
+      [name]: value,
+    }));
+  };
 
   const handleSubmit = (e) => {
-    e.preventDefault()
-    
-    const requiredFields = ['fullName', 'email', 'age', 'experience', 'satisfaction', 'frequency']
-    const emptyFields = requiredFields.filter(field => !formData[field])
-    
+    e.preventDefault();
+
+    const requiredFields = [
+      "fullName",
+      "email",
+      "age",
+      "experience",
+      "satisfaction",
+      "frequency",
+    ];
+    const emptyFields = requiredFields.filter((field) => !formData[field]);
+
     if (emptyFields.length > 0) {
-      setAlert({ type: 'error', message: 'Please fill in all required fields' })
-      return
+      setAlert({
+        type: "error",
+        message: "Please fill in all required fields",
+      });
+      return;
     }
 
-    setIsSubmitting(true)
-    
-    console.log('Survey Form Data:', formData)
-    
+    setIsSubmitting(true);
+
+    console.log("Survey Form Data:", formData);
+
     setTimeout(() => {
-      setIsSubmitting(false)
-      setAlert({ type: 'success', message: 'Survey submitted successfully! Thank you for your feedback.' })
-      
+      setIsSubmitting(false);
+      setAlert({
+        type: "success",
+        message: "Survey submitted successfully! Thank you for your feedback.",
+      });
+
       setTimeout(() => {
-        setAlert(null)
+        setAlert(null);
         setFormData({
-          fullName: '',
-          email: '',
-          age: '',
-          experience: '',
-          satisfaction: '',
-          frequency: '',
-          favoriteFeature: '',
-          suggestions: '',
-          recommendation: ''
-        })
-      }, 3000)
-    }, 1500)
-  }
+          fullName: "",
+          email: "",
+          age: "",
+          experience: "",
+          satisfaction: "",
+          frequency: "",
+          favoriteFeature: "",
+          suggestions: "",
+          recommendation: "",
+        });
+      }, 3000);
+    }, 1500);
+  };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="flex-1 bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
         <div className="bg-white shadow-lg rounded-lg p-8">
           <div className="text-center mb-8">
@@ -99,18 +112,19 @@ export default function Survey() {
               User Experience Survey
             </h2>
             <p className="text-gray-600">
-              Help us improve our platform by sharing your experience and feedback
+              Help us improve our platform by sharing your experience and
+              feedback
             </p>
           </div>
-          
+
           {alert && (
-            <Alert 
-              message={alert.message} 
-              type={alert.type} 
+            <Alert
+              message={alert.message}
+              type={alert.type}
               onClose={() => setAlert(null)}
             />
           )}
-          
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -126,7 +140,7 @@ export default function Survey() {
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Email Address *
@@ -141,7 +155,7 @@ export default function Survey() {
                 />
               </div>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Age *
@@ -157,7 +171,7 @@ export default function Survey() {
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Experience Level *
@@ -171,7 +185,7 @@ export default function Survey() {
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
                 Overall Satisfaction *
@@ -184,7 +198,7 @@ export default function Survey() {
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 How often do you use similar platforms? *
@@ -198,7 +212,7 @@ export default function Survey() {
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 What&apos;s your favorite feature? (Optional)
@@ -211,7 +225,7 @@ export default function Survey() {
                 placeholder="Tell us about your favorite feature"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Suggestions for Improvement (Optional)
@@ -224,7 +238,7 @@ export default function Survey() {
                 rows={4}
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
                 Would you recommend our platform? (Optional)
@@ -232,27 +246,23 @@ export default function Survey() {
               <RadioGroup
                 name="recommendation"
                 options={[
-                  { value: 'yes', label: 'Yes, definitely' },
-                  { value: 'maybe', label: 'Maybe' },
-                  { value: 'no', label: 'No, not likely' }
+                  { value: "yes", label: "Yes, definitely" },
+                  { value: "maybe", label: "Maybe" },
+                  { value: "no", label: "No, not likely" },
                 ]}
                 value={formData.recommendation}
                 onChange={handleChange}
               />
             </div>
-            
+
             <div className="pt-4">
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full"
-              >
-                {isSubmitting ? 'Submitting Survey...' : 'Submit Survey'}
+              <Button type="submit" disabled={isSubmitting} className="w-full">
+                {isSubmitting ? "Submitting Survey..." : "Submit Survey"}
               </Button>
             </div>
           </form>
         </div>
       </div>
     </div>
-  )
+  );
 }

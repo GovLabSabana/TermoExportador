@@ -370,4 +370,183 @@ git push origin main  # Auto-deploy configurado
 
 ---
 
+## Descripción UI
+# Sistema de Descripción UI - Export Readiness Tool
+
+## Estructura General del Layout
+
+### Header/Navegación Principal
+- **Elemento**: Barra de navegación horizontal fija
+- **Contenido**: Logo + Título de aplicación a la izquierda, menú de navegación centrado, avatar de usuario a la derecha
+- **Estilo**: Fondo blanco, sombra sutil, altura ~60px
+- **Componentes**:
+  - Logo: Icono circular pequeño + texto del nombre de la aplicación
+  - Menú: Enlaces horizontales (Inicio/Home, Recursos/Resources, Contacto/Contact, etc.)
+  - Avatar: Imagen circular del usuario (esquina superior derecha)
+
+### Container Principal
+- **Estructura**: Contenedor centralizado con máximo ancho
+- **Padding**: Márgenes laterales amplios para pantallas grandes
+- **Espaciado**: Separación generosa entre secciones
+
+## Patrones de Componentes
+
+### 1. Páginas de Resultados/Completadas
+**Características**:
+- Título principal grande y centrado
+- Barra de progreso al 100% (azul #007BFF)
+- Texto descriptivo explicativo
+- Lista vertical de botones de acción
+- Botón primario destacado
+
+**Estructura**:
+```
+[Título Principal H1]
+[Barra de Progreso Completa]
+[Texto Descriptivo]
+[Lista de Botones de Acción]
+[Botón Primario Destacado]
+[Opciones Secundarias]
+```
+
+### 2. Páginas de Selección/Configuración
+**Características**:
+- Título principal
+- Subtítulo explicativo en gris
+- Tabs/pestañas horizontales para navegación
+- Secciones con checkboxes o elementos seleccionables
+- Cards o paneles informativos
+- Barras de progreso parciales
+
+**Estructura**:
+```
+[Título Principal]
+[Subtítulo Explicativo Gris]
+[Tabs de Navegación Horizontal]
+[Sección de Elementos Seleccionables]
+[Cards de Información]
+[Indicador de Progreso]
+```
+
+### 3. Páginas de Assessment/Formularios
+**Características**:
+- Título descriptivo
+- Pasos numerados (Step 1, Step 2, etc.)
+- Campos de formulario agrupados
+- Radio buttons para selección única
+- Espaciado vertical generoso entre secciones
+
+**Estructura**:
+```
+[Título del Assessment]
+[Descripción del Proceso]
+[Paso N: Título de Sección]
+[Campos de Formulario]
+[Paso N+1: Preguntas de Assessment]
+[Radio Buttons Agrupados por Tema]
+```
+
+## Sistema de Colores
+
+### Colores Primarios
+- **Azul Principal**: #007BFF (botones primarios, barras de progreso, enlaces activos)
+- **Azul Claro**: #E3F2FD (fondos de botones secundarios, hover states)
+- **Verde Oscuro**: #2E5D5A (cards especiales, elementos destacados)
+
+### Colores Neutros
+- **Gris Oscuro**: #333333 (títulos principales, texto importante)
+- **Gris Medio**: #666666 (texto secundario, subtítulos)
+- **Gris Claro**: #F8F9FA (fondos de secciones, separadores)
+- **Blanco**: #FFFFFF (fondo principal, cards)
+
+## Componentes Específicos
+
+### Botones
+**Primario**:
+- Fondo azul (#007BFF)
+- Texto blanco
+- Border radius redondeado
+- Padding generoso
+- Hover: azul más oscuro
+
+**Secundario**:
+- Fondo gris claro (#E3F2FD)
+- Texto gris oscuro
+- Mismo estilo que primario pero colores invertidos
+
+### Barras de Progreso
+- Altura ~8px
+- Fondo gris claro
+- Progreso en azul principal
+- Border radius en ambos extremos
+
+### Cards/Paneles
+- Fondo blanco
+- Border sutil gris claro
+- Border radius suave
+- Sombra muy sutil
+- Padding interno generoso
+
+### Radio Buttons y Checkboxes
+- Estilo personalizado
+- Color azul cuando está seleccionado
+- Alineación vertical con labels
+- Espaciado vertical entre opciones
+
+## Tipografía
+
+### Jerarquía
+- **H1**: Títulos principales - grande, negrita, color oscuro
+- **H2**: Títulos de sección - mediano, negrita
+- **H3**: Subtítulos - mediano, peso normal
+- **Body**: Texto principal - tamaño regular, gris medio
+- **Small**: Texto descriptivo - más pequeño, gris claro
+
+### Espaciado
+- Líneas de altura generosas (1.5-1.6)
+- Espaciado vertical amplio entre elementos
+- Párrafos con margen inferior consistente
+
+## Responsive Behavior
+
+### Desktop
+- Layout de ancho completo con márgenes laterales
+- Elementos distribuidos horizontalmente cuando es posible
+- Cards en grid cuando aplique
+
+### Mobile
+- Stack vertical de todos los elementos
+- Botones de ancho completo
+- Navegación colapsada o simplificada
+- Padding lateral reducido pero manteniendo legibilidad
+
+## Estados Interactivos
+
+### Hover States
+- Botones: cambio de color sutil
+- Enlaces: subrayado o cambio de color
+- Cards: elevación sutil con sombra
+
+### Focus States
+- Outline azul para accesibilidad
+- Elementos de formulario con border destacado
+
+### Loading States
+- Skeleton screens o spinners
+- Botones deshabilitados durante procesos
+
+## Principios de Diseño
+
+1. **Claridad**: Información presentada de manera clara y directa
+2. **Progresión**: Indicadores visuales del progreso del usuario
+3. **Agrupación**: Elementos relacionados visualmente agrupados
+4. **Consistencia**: Patrones repetibles en toda la aplicación
+5. **Accesibilidad**: Contraste adecuado y elementos focusables
+6. **Espaciado**: Uso generoso del espacio en blanco para mejorar legibilidad
+
+## Dependencies
+
+-- Usar motion para las animaciones (De carga o similares)
+-- Cuando un componente sea asincrono o no tenga información inmediata usar loaders o Skeleton components
+
 **Nota**: Esta guía debe evolucionar con el proyecto. Actualizar cuando se agreguen nuevas librerías o patrones.
