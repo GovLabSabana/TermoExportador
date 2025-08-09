@@ -88,7 +88,12 @@ class UserLogin(BaseModel):
 class UserResponse(BaseModel):
     id: str
     email: str
-    created_at: str
+    created_at: datetime
+
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
     
 class AuthResponse(BaseModel):
     success: bool
