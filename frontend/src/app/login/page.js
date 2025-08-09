@@ -8,6 +8,7 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Alert from "@/components/ui/Alert";
+import { toast } from "react-toastify";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -56,6 +57,7 @@ export default function LoginPage() {
     if (!result.success && result.errors?.general) {
       // Form errors are handled by the hook
     }
+    toast.success("Sesión iniciada correctamente", { autoClose: 1000 });
   };
 
   if (authLoading) {
@@ -83,7 +85,7 @@ export default function LoginPage() {
               href="/register"
               className="font-medium text-blue-600 hover:text-blue-500"
             >
-              crea una cuenta nueva
+              Crea una cuenta nueva
             </Link>
           </p>
         </div>
@@ -91,7 +93,7 @@ export default function LoginPage() {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             {formErrors.general && (
-              <Alert type="error">{formErrors.general}</Alert>
+              <Alert type="error" message={formErrors.general} />
             )}
 
             <div>
@@ -107,9 +109,13 @@ export default function LoginPage() {
                 placeholder="Correo electrónico"
                 value={formData.email}
                 onChange={handleInputChange}
-                error={formErrors.email}
                 disabled={isSubmitting}
               />
+              {formErrors.email && (
+                <span className="text-red-500 text-sm px-4">
+                  {formErrors.email}
+                </span>
+              )}
             </div>
 
             <div>
@@ -131,7 +137,7 @@ export default function LoginPage() {
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  className="absolute inset-y-0 right-0 px-3 flex items-center"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isSubmitting}
                 >
@@ -140,10 +146,15 @@ export default function LoginPage() {
                   </span>
                 </button>
               </div>
+              {formErrors.password && (
+                <span className="text-red-500 text-sm px-4">
+                  {formErrors.password}
+                </span>
+              )}
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-center">
             <div className="text-sm">
               <Link
                 href="/forgot-password"

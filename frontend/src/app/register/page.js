@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { useRegister } from "@/hooks/useRegister";
-import { useAuthContext } from "@/contexts/AuthContext";
-import Input from "@/components/ui/Input";
-import Button from "@/components/ui/Button";
 import Alert from "@/components/ui/Alert";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { useRegister } from "@/hooks/useRegister";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function Register() {
   const router = useRouter();
@@ -16,13 +16,12 @@ export default function Register() {
   const {
     register,
     isSubmitting,
-    formErrors,
     showVerificationModal,
     registeredUser,
+    formErrors,
     handleVerificationModalClose,
     clearFormErrors,
   } = useRegister();
-
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -48,7 +47,6 @@ export default function Register() {
       ...prev,
       [name]: value,
     }));
-
     // Clear field-specific errors when user starts typing
     if (formErrors[name]) {
       clearFormErrors();
@@ -65,11 +63,6 @@ export default function Register() {
       formData.password,
       formData.confirmPassword
     );
-
-    if (result.success) {
-      // The verification modal will be shown automatically
-      // via the showVerificationModal state from the hook
-    }
   };
 
   if (authLoading) {
@@ -98,7 +91,7 @@ export default function Register() {
                 href="/login"
                 className="font-medium text-blue-600 hover:text-blue-500"
               >
-                inicia sesión en tu cuenta existente
+                Inicia sesión en tu cuenta existente
               </Link>
             </p>
           </div>
@@ -106,7 +99,7 @@ export default function Register() {
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
               {formErrors.general && (
-                <Alert type="error">{formErrors.general}</Alert>
+                <Alert type="error" message={formErrors.general} />
               )}
 
               <div>
@@ -122,9 +115,13 @@ export default function Register() {
                   placeholder="Correo electrónico"
                   value={formData.email}
                   onChange={handleChange}
-                  error={formErrors.email}
                   disabled={isSubmitting}
                 />
+                {formErrors.email && (
+                  <span className="text-red-500 text-sm px-4">
+                    {formErrors.email}
+                  </span>
+                )}
               </div>
 
               <div>
@@ -141,12 +138,11 @@ export default function Register() {
                     placeholder="Contraseña (mínimo 6 caracteres)"
                     value={formData.password}
                     onChange={handleChange}
-                    error={formErrors.password}
                     disabled={isSubmitting}
                   />
                   <button
                     type="button"
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    className="absolute inset-y-0 right-0 px-3 flex items-center"
                     onClick={() => setShowPassword(!showPassword)}
                     disabled={isSubmitting}
                   >
@@ -155,6 +151,11 @@ export default function Register() {
                     </span>
                   </button>
                 </div>
+                {formErrors.password && (
+                  <span className="text-red-500 text-sm px-4">
+                    {formErrors.password}
+                  </span>
+                )}
               </div>
 
               <div>
@@ -171,12 +172,11 @@ export default function Register() {
                     placeholder="Confirmar contraseña"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    error={formErrors.confirmPassword}
                     disabled={isSubmitting}
                   />
                   <button
                     type="button"
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    className="absolute inset-y-0 right-0 px-3 flex items-center"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     disabled={isSubmitting}
                   >
@@ -185,6 +185,11 @@ export default function Register() {
                     </span>
                   </button>
                 </div>
+                {formErrors.confirmPassword && (
+                  <span className="text-red-500 text-sm px-4">
+                    {formErrors.confirmPassword && formErrors.confirmPassword}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -228,7 +233,6 @@ export default function Register() {
         isOpen={showVerificationModal}
         onClose={handleVerificationModalClose}
         title="¡Cuenta Creada Exitosamente!"
-        closeOnOverlayClick={false}
       >
         <div className="text-center space-y-4">
           <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">

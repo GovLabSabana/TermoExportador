@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 
-const PUBLIC_ROUTES = ["/", "/login", "/register", "/unauthorized"];
+const PUBLIC_ROUTES = [
+  "/",
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/unauthorized",
+];
 const AUTH_ROUTES = ["/login", "/register"];
 const PROTECTED_ROUTES_PATTERN = /^\/(?!(_next|api|favicon\.ico))/;
 const normalizePath = (path) => path.replace(/\/+$/, ""); // quita slash final
