@@ -3,4 +3,3 @@ uvicorn
 supabase
 python-dotenv
 pydantic[email]
-websockets
