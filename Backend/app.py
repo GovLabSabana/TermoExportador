@@ -7,8 +7,6 @@ from dotenv import load_dotenv
 from supabase._sync.client import SyncClient as Client, create_client
 from datetime import datetime
 from typing import Optional
-from matplotlib import typing
-
 
 
 # Cargar variables de entorno
@@ -150,11 +148,20 @@ async def register_user(user_data: UserRegister):
                 created_at=response.user.created_at
             )
             
+            if not response.session:
+                return AuthResponse(
+                    success=True,
+                    message="Usuario registrado. Revisa tu correo para confirmar la cuenta.",
+                    user=user_info,
+                    access_token=None
+                )
+
+            # 🔹 Caso: usuario creado y ya logueado (no requiere confirmación)
             return AuthResponse(
                 success=True,
                 message="Usuario registrado exitosamente",
                 user=user_info,
-                access_token=response.session.access_token if response.session else None
+                access_token=response.session.access_token
             )
         else:
             raise HTTPException(
@@ -194,19 +201,9 @@ async def login_user(user_data: UserLogin):
                 created_at=response.user.created_at
             )
             
-                        # 🔹 Caso: usuario creado pero requiere confirmación por email
-            if not response.session:
-                return AuthResponse(
-                    success=True,
-                    message="Usuario registrado. Revisa tu correo para confirmar la cuenta.",
-                    user=user_info,
-                    access_token=None
-                )
-
-            # 🔹 Caso: usuario creado y ya logueado (no requiere confirmación)
             return AuthResponse(
                 success=True,
-                message="Usuario registrado exitosamente",
+                message="Login exitoso",
                 user=user_info,
                 access_token=response.session.access_token
             )
