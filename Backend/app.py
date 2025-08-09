@@ -1,17 +1,29 @@
+from matplotlib import typing
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 import os
 from dotenv import load_dotenv
 from supabase._sync.client import SyncClient as Client, create_client
+from datetime import datetime
+from typing import Optional
+from matplotlib import typing
+
+
 
 # Cargar variables de entorno
-load_dotenv()
 
-# Configurar Supabase
-url: str = os.environ.get("SUPABASE_URL")
-key: str = os.environ.get("SUPABASE_KEY")
-supabase: Client = create_client(url, key)
+dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
+load_dotenv(dotenv_path=dotenv_path)
+
+url = os.getenv("SUPABASE_URL")
+key = os.getenv("SUPABASE_KEY")
+
+if not url or not key:
+    raise RuntimeError("No se cargaron las variables de entorno de Supabase")
+
+from supabase._sync.client import create_client
+supabase = create_client(url, key)
 
 # Crear app FastAPI
 app = FastAPI(
@@ -98,8 +110,8 @@ class UserResponse(BaseModel):
 class AuthResponse(BaseModel):
     success: bool
     message: str
-    user: UserResponse = None
-    access_token: str = None
+    user: Optional[UserResponse] = None
+    access_token: Optional[str] = None
 
 class ErrorResponse(BaseModel):
     success: bool
@@ -182,9 +194,19 @@ async def login_user(user_data: UserLogin):
                 created_at=response.user.created_at
             )
             
+                        # 🔹 Caso: usuario creado pero requiere confirmación por email
+            if not response.session:
+                return AuthResponse(
+                    success=True,
+                    message="Usuario registrado. Revisa tu correo para confirmar la cuenta.",
+                    user=user_info,
+                    access_token=None
+                )
+
+            # 🔹 Caso: usuario creado y ya logueado (no requiere confirmación)
             return AuthResponse(
                 success=True,
-                message="Login exitoso",
+                message="Usuario registrado exitosamente",
                 user=user_info,
                 access_token=response.session.access_token
             )
