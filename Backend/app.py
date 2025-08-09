@@ -1,138 +1,264 @@
-import streamlit as st
-from supabase import create_client, Client
-import os   
+from fastapi import FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, EmailStr
+import os
 from dotenv import load_dotenv
+from supabase._sync.client import SyncClient as Client, create_client
+
+# Cargar variables de entorno
+load_dotenv()
+
+# Configurar Supabase
+url: str = os.environ.get("SUPABASE_URL")
+key: str = os.environ.get("SUPABASE_KEY")
+supabase: Client = create_client(url, key)
+
+# Crear app FastAPI
+app = FastAPI(
+    title="TermoExportador API",
+    description="API para autenticación de usuarios con Supabase",
+    version="1.0.0"
+)
+
+# Configurar CORS para permitir requests desde el frontend
 
 
 load_dotenv()
-supabase_url = os.getenv("SUPABASE_URL")
-supabase_key = os.getenv("SUPABASE_KEY")    
-supabase: Client = create_client(supabase_url, supabase_key)
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
-def sign_up(email, password):
+if ENVIRONMENT == "production":
+    # Configuración segura para producción
+    allowed_origins = [
+        "https://tuapp.com",
+        "https://www.tuapp.com",
+        # Agrega aquí los dominios de tu frontend en producción
+    ]
+else:
+    # Configuración permisiva para desarrollo
+    allowed_origins = [
+        "http://localhost:3000",    # React
+        "http://localhost:3001",    # Vue
+        "http://localhost:5173",    # Vite
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+        "*"  # Solo para desarrollo
+    ]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=[
+        "Content-Type",
+        "Authorization", 
+        "Accept",
+        "X-Requested-With",
+        "Access-Control-Allow-Headers",
+        "Access-Control-Allow-Origin",
+        "Access-Control-Allow-Methods"
+    ],
+)
+
+# Modelos de datos
+class UserRegister(BaseModel):
+    email: EmailStr
+    password: str
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "email": "usuario@ejemplo.com",
+                "password": "mi_password_seguro"
+            }
+        }
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "email": "usuario@ejemplo.com",
+                "password": "mi_password_seguro"
+            }
+        }
+
+class UserResponse(BaseModel):
+    id: str
+    email: str
+    created_at: str
+    
+class AuthResponse(BaseModel):
+    success: bool
+    message: str
+    user: UserResponse = None
+    access_token: str = None
+
+class ErrorResponse(BaseModel):
+    success: bool
+    message: str
+    error: str = None
+
+# Endpoint de salud
+@app.get("/", tags=["Health"])
+async def health_check():
+    """Verificar que la API está funcionando"""
+    return {"status": "ok", "message": "TermoExportador API está funcionando"}
+
+# Endpoint de registro ----------------------------------------------------
+@app.post("/auth/register", 
+         response_model=AuthResponse, 
+         tags=["Autenticación"],
+         summary="Registrar nuevo usuario",
+         description="Crea una nueva cuenta de usuario con email y contraseña")
+async def register_user(user_data: UserRegister):
+    """
+    Registra un nuevo usuario en el sistema
+    
+    - **email**: Email válido del usuario
+    - **password**: Contraseña segura (mínimo 6 caracteres)
+    """
     try:
-        response = supabase.auth.sign_up({"email": email, "password": password})
+        response = supabase.auth.sign_up({
+            "email": user_data.email,
+            "password": user_data.password
+        })
+        
         if response.user:
-            return response
+            user_info = UserResponse(
+                id=response.user.id,
+                email=response.user.email,
+                created_at=response.user.created_at
+            )
+            
+            return AuthResponse(
+                success=True,
+                message="Usuario registrado exitosamente",
+                user=user_info,
+                access_token=response.session.access_token if response.session else None
+            )
         else:
-            st.error("Error al registrar usuario")
-            return None
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Error en el registro. Verifica los datos."
+            )
+            
     except Exception as e:
-        st.error(f"Error signing up: {e}")
-        return None
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Error al registrar usuario: {str(e)}"
+        )
 
-def sign_in(email, password):
+# Endpoint de login ----------------------------------------------------
+@app.post("/auth/login", 
+         response_model=AuthResponse, 
+         tags=["Autenticación"],
+         summary="Iniciar sesión",
+         description="Autentica un usuario existente")
+async def login_user(user_data: UserLogin):
+    """
+    Inicia sesión con email y contraseña
+    
+    - **email**: Email del usuario registrado
+    - **password**: Contraseña del usuario
+    """
     try:
-        response = supabase.auth.sign_in_with_password({"email": email, "password": password})
+        response = supabase.auth.sign_in_with_password({
+            "email": user_data.email,
+            "password": user_data.password
+        })
+        
         if response.user:
-            return response
+            user_info = UserResponse(
+                id=response.user.id,
+                email=response.user.email,
+                created_at=response.user.created_at
+            )
+            
+            return AuthResponse(
+                success=True,
+                message="Login exitoso",
+                user=user_info,
+                access_token=response.session.access_token
+            )
         else:
-            st.error("Credenciales incorrectas")
-            return None
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Credenciales incorrectas"
+            )
+            
     except Exception as e:
-        st.error(f"Error signing in: {e}")
-        return None
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Error en el login: {str(e)}"
+        )
 
-def sign_out():
+# Endpoint de logout ----------------------------------------------------
+@app.post("/auth/logout", 
+         tags=["Autenticación"],
+         summary="Cerrar sesión",
+         description="Cierra la sesión del usuario actual")
+async def logout_user():
+    """
+    Cierra la sesión del usuario actual
+    """
     try:
         supabase.auth.sign_out()
-        st.success("Sesión cerrada exitosamente")
-        st.session_state.user_email = None
-        st.session_state.user_id = None
+        return {"success": True, "message": "Sesión cerrada exitosamente"}
     except Exception as e:
-        st.error(f"Error signing out: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Error al cerrar sesión: {str(e)}"
+        )
 
-def get_current_user():
+# Endpoint para obtener usuario actual -----------------------------------
+@app.get("/auth/me", 
+        response_model=UserResponse, 
+        tags=["Usuario"],
+        summary="Obtener usuario actual",
+        description="Obtiene la información del usuario autenticado")
+async def get_current_user():
+    """
+    Obtiene la información del usuario actualmente autenticado
+    """
     try:
         user = supabase.auth.get_user()
         if user and user.user:
-            return user.user
-        return None
-    except:
-        return None
-
-def main_app(user_email):
-    st.title("TERMO Exportador")
-    st.write(f"¡Bienvenido, {user_email}!")
-    
- 
-    current_user = get_current_user()
-    if current_user:
-        st.info(f"**Usuario ID:** {current_user.id}")
-        st.info(f"**Email:** {current_user.email}")
-        if current_user.email_confirmed_at:
-            st.success("Email confirmado")
+            return UserResponse(
+                id=user.user.id,
+                email=user.user.email,
+                created_at=user.user.created_at
+            )
         else:
-            st.warning("Email pendiente de confirmación")
-    
-    st.markdown("---")
-    st.write("Aquí puedes agregar el contenido principal de tu aplicación.")
-    
-  
-    if st.button("Cerrar Sesión", type="secondary"):
-        sign_out()
-        st.rerun() 
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Usuario no autenticado"
+            )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Error al obtener usuario: {str(e)}"
+        )
 
-def auth_screen():
-    st.title("Autenticación")
-    
-    tab1, tab2 = st.tabs(["Iniciar Sesión", "Registrarse"])
-    
-    with tab1:
-        st.header("Iniciar Sesión")
-        with st.form("signin_form"):
-            email_signin = st.text_input("Email", key="signin_email")
-            password_signin = st.text_input("Contraseña", type="password", key="signin_password")
-            submit_signin = st.form_submit_button("Iniciar Sesión", type="primary")
-            
-            if submit_signin:
-                if email_signin and password_signin:
-                    user = sign_in(email_signin, password_signin)
-                    if user:
-                        st.success("¡Sesión iniciada exitosamente!")
-                        st.session_state.user_email = email_signin
-                        st.session_state.user_id = user.user.id
-                        st.rerun()
-                else:
-                    st.warning("Por favor completa todos los campos")
-    
-    with tab2:
-        st.header("Registrarse")
-        with st.form("signup_form"):
-            email_signup = st.text_input("Email", key="signup_email")
-            password_signup = st.text_input("Contraseña", type="password", key="signup_password")
-            password_confirm = st.text_input("Confirmar Contraseña", type="password", key="confirm_password")
-            submit_signup = st.form_submit_button("Crear Cuenta", type="primary")
-            
-            if submit_signup:
-                if email_signup and password_signup and password_confirm:
-                    if password_signup == password_confirm:
-                        if len(password_signup) >= 6:
-                            user = sign_up(email_signup, password_signup)
-                            if user:
-                                st.success("¡Usuario registrado exitosamente! Revisa tu email para confirmar.")
-                                st.info("Después de confirmar tu email, podrás iniciar sesión.")
-                        else:
-                            st.warning("a contraseña debe tener al menos 6 caracteres")
-                    else:
-                        st.error("Las contraseñas no coinciden")
-                else:
-                    st.warning("Por favor completa todos los campos")
+# Endpoint de ejemplo para datos protegidos
+@app.get("/protected/data", 
+        tags=["Datos Protegidos"],
+        summary="Ejemplo de endpoint protegido",
+        description="Endpoint de ejemplo que requiere autenticación")
+async def get_protected_data():
+    """
+    Endpoint de ejemplo que requiere autenticación
+    """
+    return {
+        "message": "¡Datos protegidos obtenidos exitosamente!",
+        "data": {
+            "ejemplo": "Este es un endpoint protegido",
+            "timestamp": "2024-01-01T00:00:00Z"
+        }
+    }
 
-
-if "user_email" not in st.session_state:
-    st.session_state.user_email = None
-if "user_id" not in st.session_state:
-    st.session_state.user_id = None
-
-
-if not st.session_state.user_email:
-    current_user = get_current_user()
-    if current_user:
-        st.session_state.user_email = current_user.email
-        st.session_state.user_id = current_user.id
-
-if st.session_state.user_email:
-    main_app(st.session_state.user_email)
-else:
-    auth_screen()
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
