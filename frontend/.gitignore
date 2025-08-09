@@ -40,4 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-
+# claude
+/.claude
+AUTH_README.md
+CLAUDE.md
