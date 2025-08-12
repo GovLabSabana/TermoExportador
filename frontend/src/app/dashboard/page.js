@@ -1,23 +1,27 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useAuthContext } from '@/contexts/AuthContext'
-import { cookieUtils } from '@/lib/cookies'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/hooks/useAuth'
 import Button from '@/components/ui/Button'
 
 export default function DashboardPage() {
-  const { user, logout, isAuthenticated, isLoading } = useAuthContext()
-  const [cookieToken, setCookieToken] = useState(null)
+  const { user, logout, isAuthenticated, isLoading } = useAuth()
+  const router = useRouter()
 
   useEffect(() => {
-    setCookieToken(cookieUtils.getToken())
-    
+    // Redirect if not authenticated and not loading
+    if (!isLoading && !isAuthenticated) {
+      router.push('/unauthorized')
+    }
+  }, [isAuthenticated, isLoading, router])
+
+  useEffect(() => {
     // Log current state
     console.log('Dashboard page state:', {
       isAuthenticated,
       isLoading,
-      user: user?.email,
-      cookieExists: !!cookieUtils.getToken()
+      user: user?.email
     })
   }, [isAuthenticated, isLoading, user])
 
@@ -82,9 +86,9 @@ export default function DashboardPage() {
                 </div>
                 
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Cookie Token</dt>
+                  <dt className="text-sm font-medium text-gray-500">Session Status</dt>
                   <dd className="mt-1 text-sm text-gray-900 font-mono">
-                    {cookieToken ? 'Presente' : 'Ausente'}
+                    {isAuthenticated ? 'Active' : 'Inactive'}
                   </dd>
                 </div>
                 

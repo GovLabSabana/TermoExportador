@@ -1,184 +1,207 @@
-import { useEffect, useCallback } from "react";
+"use client";
+
+import {
+  useState,
+  useEffect,
+  useCallback,
+  createContext,
+  useContext,
+} from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/authStore";
-import { authApi } from "@/lib/api";
-import { cookieUtils, isTokenExpired, getUserFromToken } from "@/lib/cookies";
+import { authErrorMessages } from "@/lib/auth-utils";
 
-export const useAuth = () => {
+const AuthContext = createContext();
+
+export function AuthProvider({ children, initialSession = null }) {
+  const [user, setUser] = useState(initialSession?.user || null);
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    !!initialSession?.user
+  );
+  const [isLoading, setIsLoading] = useState(false); // Always start with false for SSR
+  const [isLoggingIn, setIsLoggingIn] = useState(false); // Separate loading for login
+  const [isRegistering, setIsRegistering] = useState(false); // Separate loading for register
+  const [isLoggingOut, setIsLoggingOut] = useState(false); // Separate loading for logout
+  const [error, setError] = useState(null);
   const router = useRouter();
-  const {
-    user,
-    token,
-    isAuthenticated,
-    isLoading,
-    error,
-    isHydrated,
-    setUser,
-    setToken,
-    setLoading,
-    setError,
-    clearError,
-    login: loginStore,
-    logout: logoutStore,
-    syncWithCookies,
-    hydrate,
-  } = useAuthStore();
 
-  // Check and sync authentication state
-  const checkAuthStatus = useCallback(async () => {
-    setLoading(true);
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  const checkAuth = useCallback(async () => {
+    // If we have initialSession, don't make additional requests
+    if (initialSession !== null) {
+      return;
+    }
+
+    // Only check if we don't have user data yet
+    if (user) {
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
-      const cookieToken = cookieUtils.getToken();
+      const response = await fetch("/api/auth/session", {
+        method: "GET",
+        credentials: "same-origin",
+      });
 
-      // If no cookie token, ensure we're logged out
-      if (!cookieToken) {
-        if (isAuthenticated) {
-          logoutStore();
-        }
-        setLoading(false);
-        return false;
+      const data = await response.json();
+
+      if (data.success && data.isAuthenticated && data.user) {
+        setUser(data.user);
+        setIsAuthenticated(true);
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
       }
-
-      // Check if token is expired
-      if (isTokenExpired(cookieToken)) {
-        // Try to refresh token
-        const refreshResult = await authApi.refreshToken();
-
-        if (!refreshResult.success) {
-          logoutStore();
-          setLoading(false);
-          return false;
-        }
-
-        loginStore(refreshResult.user, refreshResult.token);
-        setLoading(false);
-        return true;
-      }
-
-      // Token exists and is valid, but we might not have user data
-      if (!user || token !== cookieToken) {
-        try {
-          // Try to verify token and get user data
-          const verifyResult = await authApi.verifyToken(cookieToken);
-
-          if (verifyResult.success && verifyResult.user) {
-            loginStore(verifyResult.user, cookieToken);
-          } else {
-            // If verification fails, try to extract user from token payload
-            const userFromToken = getUserFromToken(cookieToken);
-            if (userFromToken) {
-              loginStore(userFromToken, cookieToken);
-            } else {
-              logoutStore();
-              setLoading(false);
-              return false;
-            }
-          }
-        } catch (error) {
-          console.error("Token verification error:", error);
-          // If verification fails, logout
-          logoutStore();
-          setLoading(false);
-          return false;
-        }
-      }
-
-      setLoading(false);
-      return true;
     } catch (error) {
       console.error("Auth check error:", error);
-      setLoading(false);
-      return false;
+      setUser(null);
+      setIsAuthenticated(false);
+    } finally {
+      setIsLoading(false);
     }
-  }, [user, token, isAuthenticated, loginStore, logoutStore, setLoading]);
+  }, [initialSession, user]);
+
+  const login = useCallback(async (email, password) => {
+    if (!email || !password) {
+      setError("Email and password are required");
+      return { success: false, error: "Email and password are required" };
+    }
+
+    setIsLoggingIn(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "same-origin",
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success && data.user) {
+        setUser(data.user);
+        setIsAuthenticated(true);
+        return { success: true };
+      } else {
+        const errorMessage =
+          data.error || authErrorMessages.INVALID_CREDENTIALS;
+        setError(errorMessage);
+        return { success: false, error: errorMessage };
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      const errorMessage = authErrorMessages.NETWORK_ERROR;
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setIsLoggingIn(false);
+    }
+  }, []);
+
+  const register = useCallback(async (email, password) => {
+    if (!email || !password) {
+      setError("Email and password are required");
+      return { success: false, error: "Email and password are required" };
+    }
+
+    setIsRegistering(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "same-origin",
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // If auto-login after registration
+        if (data.autoLogin && data.user) {
+          setUser(data.user);
+          setIsAuthenticated(true);
+        }
+        return {
+          success: true,
+          autoLogin: data.autoLogin,
+          message: data.message,
+        };
+      } else {
+        const errorMessage = data.error || "Registration failed";
+        setError(errorMessage);
+        return { success: false, error: errorMessage };
+      }
+    } catch (error) {
+      console.error("Register error:", error);
+      const errorMessage = authErrorMessages.NETWORK_ERROR;
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setIsRegistering(false);
+    }
+  }, []);
 
   const logout = useCallback(async () => {
-    setLoading(true);
-    
+    setIsLoggingOut(true);
     try {
-      console.log('Starting logout process...');
-      
-      // Call the enhanced logout API method (includes /auth/me call)
-      const logoutResult = await authApi.logout();
-      
-      if (logoutResult.success) {
-        console.log('API logout successful:', logoutResult.message);
-        if (logoutResult.userData) {
-          console.log('User data retrieved during logout:', logoutResult.userData);
-        }
-      } else {
-        console.log('API logout error:', logoutResult.error);
-      }
-      
-      // Clear store state
-      logoutStore();
-      
-      // Clear localStorage completely (in addition to cookies)
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.removeItem('termoexportador-auth');
-          console.log('LocalStorage cleared');
-        } catch (error) {
-          console.error('Error clearing localStorage:', error);
-        }
-      }
-      
-      console.log('Logout process completed, redirecting to login...');
-      
-      // Redirect to login page
-      router.push('/login');
-      
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "same-origin",
+      });
     } catch (error) {
       console.error("Logout error:", error);
-      
-      // Even if there's an error, clear everything and redirect
-      logoutStore();
-      
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.removeItem('termoexportador-auth');
-        } catch (lsError) {
-          console.error('Error clearing localStorage during error handling:', lsError);
-        }
-      }
-      
-      router.push('/login');
     } finally {
-      setLoading(false);
+      // Clear state immediately
+      setUser(null);
+      setIsAuthenticated(false);
+      setError(null);
+      setIsLoggingOut(false);
+      // Use replace instead of push to prevent back navigation
+      window.location.href = "/login";
     }
-  }, [logoutStore, setLoading, router]);
+  }, []);
 
-  const refreshAuth = useCallback(async () => {
-    const refreshResult = await authApi.refreshToken();
-
-    if (refreshResult.success) {
-      loginStore(refreshResult.user, refreshResult.token);
-      return true;
-    }
-
-    logoutStore();
-    return false;
-  }, [loginStore, logoutStore]);
-
-  // Initial hydration and auth check
   useEffect(() => {
-    if (isHydrated) {
-      checkAuthStatus();
+    // Only run checkAuth if we don't have initial session data
+    if (initialSession === null) {
+      checkAuth();
     }
-  }, [isHydrated, checkAuthStatus]);
+  }, [checkAuth, initialSession]);
 
-  return {
+  const value = {
     user,
-    token,
     isAuthenticated,
     isLoading,
+    isLoggingIn,
+    isRegistering,
+    isLoggingOut,
     error,
-    isHydrated,
+    login,
+    register,
     logout,
-    checkAuthStatus,
-    refreshAuth,
     clearError,
-    setError,
+    checkAuth,
   };
-};
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+}

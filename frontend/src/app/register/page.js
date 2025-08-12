@@ -4,42 +4,35 @@ import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
-import { useAuthContext } from "@/contexts/AuthContext";
-import { useRegister } from "@/hooks/useRegister";
+import { useAuth } from "@/hooks/useAuth";
+import { validateEmail, validatePassword } from "@/lib/auth-utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 export default function Register() {
   const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading } = useAuthContext();
-  const {
-    register,
-    isSubmitting,
-    showVerificationModal,
-    registeredUser,
-    formErrors,
-    handleVerificationModalClose,
-    clearFormErrors,
-  } = useRegister();
+  const { isAuthenticated, isLoading, isRegistering, register, error: authError, clearError } = useAuth();
+  
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     confirmPassword: "",
   });
+  
+  const [localError, setLocalError] = useState(null);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [registeredUser, setRegisteredUser] = useState(null);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated && !authLoading) {
+    if (isAuthenticated && !isLoading) {
       router.push("/dashboard");
     }
-  }, [isAuthenticated, authLoading, router]);
-
-  useEffect(() => {
-    clearFormErrors();
-  }, [clearFormErrors]);
+  }, [isAuthenticated, isLoading, router]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -47,25 +40,62 @@ export default function Register() {
       ...prev,
       [name]: value,
     }));
-    // Clear field-specific errors when user starts typing
-    if (formErrors[name]) {
-      clearFormErrors();
+    // Clear errors when user starts typing
+    if (localError) {
+      setLocalError(null);
+    }
+    if (authError) {
+      clearError();
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (isSubmitting) return;
+    if (isRegistering) return;
 
-    const result = await register(
-      formData.email,
-      formData.password,
-      formData.confirmPassword
-    );
+    // Validate form
+    if (!validateEmail(formData.email)) {
+      setLocalError("Invalid email format");
+      return;
+    }
+
+    if (!validatePassword(formData.password)) {
+      setLocalError("Password must be at least 6 characters");
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setLocalError("Passwords don't match");
+      return;
+    }
+
+    setLocalError(null);
+    clearError();
+
+    const result = await register(formData.email, formData.password);
+
+    if (result.success) {
+      if (result.autoLogin) {
+        // Auto-logged in after registration
+        toast.success("Account created and logged in successfully!");
+        router.push("/dashboard");
+      } else {
+        // Need to show verification modal
+        setRegisteredUser({ email: formData.email });
+        setShowVerificationModal(true);
+        toast.success("Account created successfully!");
+      }
+    }
+    // Error is handled by useAuth context
   };
 
-  if (authLoading) {
+  const handleVerificationModalClose = () => {
+    setShowVerificationModal(false);
+    router.push("/login");
+  };
+
+  if (isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -98,8 +128,8 @@ export default function Register() {
 
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
-              {formErrors.general && (
-                <Alert type="error" message={formErrors.general} />
+              {(localError || authError) && (
+                <Alert type="error" message={localError || authError} />
               )}
 
               <div>
@@ -115,13 +145,8 @@ export default function Register() {
                   placeholder="Correo electrónico"
                   value={formData.email}
                   onChange={handleChange}
-                  disabled={isSubmitting}
+                  disabled={isRegistering}
                 />
-                {formErrors.email && (
-                  <span className="text-red-500 text-sm px-4">
-                    {formErrors.email}
-                  </span>
-                )}
               </div>
 
               <div>
@@ -138,24 +163,19 @@ export default function Register() {
                     placeholder="Contraseña (mínimo 6 caracteres)"
                     value={formData.password}
                     onChange={handleChange}
-                    disabled={isSubmitting}
+                    disabled={isRegistering}
                   />
                   <button
                     type="button"
                     className="absolute inset-y-0 right-0 px-3 flex items-center"
                     onClick={() => setShowPassword(!showPassword)}
-                    disabled={isSubmitting}
+                    disabled={isRegistering}
                   >
                     <span className="text-sm text-gray-500">
                       {showPassword ? "Ocultar" : "Mostrar"}
                     </span>
                   </button>
                 </div>
-                {formErrors.password && (
-                  <span className="text-red-500 text-sm px-4">
-                    {formErrors.password}
-                  </span>
-                )}
               </div>
 
               <div>
@@ -172,24 +192,19 @@ export default function Register() {
                     placeholder="Confirmar contraseña"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    disabled={isSubmitting}
+                    disabled={isRegistering}
                   />
                   <button
                     type="button"
                     className="absolute inset-y-0 right-0 px-3 flex items-center"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    disabled={isSubmitting}
+                    disabled={isRegistering}
                   >
                     <span className="text-sm text-gray-500">
                       {showConfirmPassword ? "Ocultar" : "Mostrar"}
                     </span>
                   </button>
                 </div>
-                {formErrors.confirmPassword && (
-                  <span className="text-red-500 text-sm px-4">
-                    {formErrors.confirmPassword && formErrors.confirmPassword}
-                  </span>
-                )}
               </div>
             </div>
 
@@ -198,14 +213,14 @@ export default function Register() {
                 type="submit"
                 className="group relative w-full flex justify-center"
                 disabled={
-                  isSubmitting ||
+                  isRegistering ||
                   !formData.email ||
                   !formData.password ||
                   !formData.confirmPassword
                 }
-                loading={isSubmitting}
+                loading={isRegistering}
               >
-                {isSubmitting ? "Creando cuenta..." : "Crear Cuenta"}
+                {isRegistering ? "Creando cuenta..." : "Crear Cuenta"}
               </Button>
             </div>
           </form>
