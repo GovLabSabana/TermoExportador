@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 export default function Thermometer() {
   // Nivel actual de capacidad para exportar (1 a 5)
