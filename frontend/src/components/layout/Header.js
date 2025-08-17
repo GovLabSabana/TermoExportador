@@ -1,11 +1,10 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { useAuthContext } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
 
 export default function Header() {
-  const { user, logout, isLoading, isAuthenticated, isLoggingOut } =
-    useAuthContext();
+  const { user, logout, isLoading, isLoggingOut, isAuthenticated } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const headerRef = useRef(null);
 

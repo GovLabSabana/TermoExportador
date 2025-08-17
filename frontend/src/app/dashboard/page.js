@@ -1,23 +1,27 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useAuthContext } from '@/contexts/AuthContext'
-import { cookieUtils } from '@/lib/cookies'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/hooks/useAuth'
 import Button from '@/components/ui/Button'
 
 export default function DashboardPage() {
-  const { user, logout, isAuthenticated, isLoading } = useAuthContext()
-  const [cookieToken, setCookieToken] = useState(null)
+  const { user, logout, isAuthenticated, isLoading } = useAuth()
+  const router = useRouter()
 
   useEffect(() => {
-    setCookieToken(cookieUtils.getToken())
-    
+    // Redirect if not authenticated and not loading
+    if (!isLoading && !isAuthenticated) {
+      router.push('/unauthorized')
+    }
+  }, [isAuthenticated, isLoading, router])
+
+  useEffect(() => {
     // Log current state
     console.log('Dashboard page state:', {
       isAuthenticated,
       isLoading,
-      user: user?.email,
-      cookieExists: !!cookieUtils.getToken()
+      user: user?.email
     })
   }, [isAuthenticated, isLoading, user])
 
@@ -82,9 +86,9 @@ export default function DashboardPage() {
                 </div>
                 
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Cookie Token</dt>
+                  <dt className="text-sm font-medium text-gray-500">Session Status</dt>
                   <dd className="mt-1 text-sm text-gray-900 font-mono">
-                    {cookieToken ? 'Presente' : 'Ausente'}
+                    {isAuthenticated ? 'Active' : 'Inactive'}
                   </dd>
                 </div>
                 
@@ -95,6 +99,69 @@ export default function DashboardPage() {
                   </dd>
                 </div>
               </dl>
+            </div>
+
+            <div className="mt-8 border-t border-gray-200 pt-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Preguntas Básicas
+              </h3>
+
+              <div className="space-y-4">
+                {[
+                  'Nombre de la compañía',
+                  'Nombre de quien responde la encuesta',
+                  'Email',
+                  'Teléfono del contacto',
+                  'NIT',
+                  'Ciudad',
+                  '¿Cómo definiría el tamaño de su empresa?'
+                ].map((label, idx, arr) => (
+                  <div key={idx}>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-sm font-medium text-gray-700">
+                        {label}
+                      </label>
+                      {idx === arr.length - 1 && (
+                        <a
+                          href="https://www.mipymes.gov.co/temas-de-interes/definicion-tamano-empresarial-micro-pequena-median"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 text-sm hover:underline"
+                        >
+                          ¿No está seguro?
+                        </a>
+                      )}
+                    </div>
+
+                    {idx === arr.length - 1 ? (
+                      <select
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                      >
+                        <option value="">Seleccione una opción</option>
+                        <option value="microempresa">Microempresa</option>
+                        <option value="pequena">Empresa pequeña</option>
+                        <option value="mediana">Empresa mediana</option>
+                        <option value="grande">Empresa grande</option>
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6">
+                <Button
+                  onClick={() => console.log('Guardar respuestas')}
+                  variant="primary"
+                  className="w-full"
+                >
+                  Guardar Respuestas
+                </Button>
+              </div>
             </div>
 
             <div className="mt-6 pt-6 border-t border-gray-200">

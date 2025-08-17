@@ -1,58 +1,13 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
-const PUBLIC_ROUTES = [
-  "/",
-  "/login",
-  "/register",
-  "/forgot-password",
-  "/unauthorized",
-];
-const AUTH_ROUTES = ["/login", "/register"];
-const PROTECTED_ROUTES_PATTERN = /^\/(?!(_next|api|favicon\.ico))/;
-const normalizePath = (path) => path.replace(/\/+$/, ""); // quita slash final
-
-function isTokenExpired(token) {
-  if (!token) return true;
-
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    const currentTime = Date.now() / 1000;
-
-    return payload.exp < currentTime;
-  } catch (error) {
-    console.error("Error checking token expiration:", error);
-    return true;
-  }
-}
-
-async function verifyToken(token) {
-  try {
-    // Basic token format validation
-    if (!token || !token.includes(".") || token.split(".").length !== 3) {
-      return { valid: false, error: "Invalid token format" };
-    }
-
-    // Check if token is expired
-    if (isTokenExpired(token)) {
-      return { valid: false, error: "Token expired" };
-    }
-
-    // For now, we'll consider it valid if it's not expired
-    // In the future, you might want to verify the signature with the actual Supabase secret
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    return { valid: true, payload };
-  } catch (error) {
-    return { valid: false, error: error.message };
-  }
-}
+// Public routes that don't require authentication
+const publicRoutes = ["/", "/login", "/register", "/unauthorized"];
+// Routes that redirect to dashboard if authenticated (auth-only routes)
+const authOnlyRoutes = ["/login", "/register"];
 
 export async function middleware(request) {
-  const pathname = normalizePath(request.nextUrl.pathname);
-  const token = request.cookies.get("auth_token")?.value;
-
-  // Improved logging with short token
-  const shortToken = token ? token.substring(0, 20) + "..." : "undefined";
-  console.log(`Middleware: ${pathname}, token: ${shortToken}`);
+  const pathname = request.nextUrl.pathname;
 
   // Skip middleware for static files and API routes
   if (
@@ -63,55 +18,27 @@ export async function middleware(request) {
     return NextResponse.next();
   }
 
-  const isPublic = PUBLIC_ROUTES.includes(pathname);
-  const isAuthRoute = AUTH_ROUTES.includes(pathname);
+  console.log(`Middleware: ${pathname}`);
 
-  // Handle protected routes
-  if (!isPublic && PROTECTED_ROUTES_PATTERN.test(pathname)) {
-    if (!token) {
-      console.log("No token found, redirecting to unauthorized");
-      const url = request.nextUrl.clone();
-      url.pathname = "/unauthorized";
-      url.searchParams.set("redirect", pathname);
-      return NextResponse.redirect(url);
+  // Check authentication status from cookies
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get("access_token")?.value;
+  const isAuthenticated = !!accessToken;
+
+  // If route is public, allow access
+  if (publicRoutes.includes(pathname)) {
+    // But redirect authenticated users away from auth-only routes
+    if (authOnlyRoutes.includes(pathname) && isAuthenticated) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
     }
-
-    const verifyResult = await verifyToken(token);
-    console.log(
-      "Token verification result:",
-      verifyResult.valid,
-      verifyResult.error
-    );
-
-    if (!verifyResult.valid) {
-      console.log("Invalid token, redirecting and clearing cookies");
-      const response = NextResponse.redirect(
-        new URL("/unauthorized", request.url)
-      );
-      response.cookies.delete("auth_token", { path: "/" });
-      response.cookies.delete("refresh_token", { path: "/" });
-      return response;
-    }
-
-    console.log("Token valid, allowing access to protected route");
+    return NextResponse.next();
   }
 
-  // Redirect authenticated users away from auth pages
-  if (isAuthRoute && token) {
-    const verifyResult = await verifyToken(token);
-    console.log("Auth route with token, verification:", verifyResult.valid);
-
-    if (verifyResult.valid) {
-      console.log("Valid token on auth page, redirecting to dashboard");
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    } else {
-      console.log("Invalid token on auth page, clearing cookies");
-      // Clear invalid token
-      const response = NextResponse.next();
-      response.cookies.delete("auth_token", { path: "/" });
-      response.cookies.delete("refresh_token", { path: "/" });
-      return response;
-    }
+  // All other routes require authentication
+  if (!isAuthenticated) {
+    const loginUrl = new URL("/unauthorized", request.url);
+    loginUrl.searchParams.set("from", pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   // Add security headers

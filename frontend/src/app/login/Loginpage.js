@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useLogin } from "@/hooks/useLogin";
-import { useAuthContext } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Alert from "@/components/ui/Alert";
@@ -13,26 +12,24 @@ import { toast } from "react-toastify";
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAuthenticated, isLoading: authLoading } = useAuthContext();
-  const { login, isSubmitting, formErrors, clearFormErrors } = useLogin();
+  const { isAuthenticated, isLoading, isLoggingIn, login, error, clearError } = useAuth();
 
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
-
   const [showPassword, setShowPassword] = useState(false);
   const redirectTo = searchParams?.get("redirect") || "/dashboard";
 
   useEffect(() => {
-    if (isAuthenticated && !authLoading) {
+    if (isAuthenticated && !isLoading) {
       router.push(redirectTo);
     }
-  }, [isAuthenticated, authLoading, router, redirectTo]);
+  }, [isAuthenticated, isLoading, router, redirectTo]);
 
   useEffect(() => {
-    clearFormErrors();
-  }, [clearFormErrors]);
+    clearError();
+  }, [clearError]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -41,26 +38,27 @@ export default function LoginPage() {
       [name]: value,
     }));
 
-    // Clear field-specific errors when user starts typing
-    if (formErrors[name]) {
-      clearFormErrors();
+    // Clear errors when user starts typing
+    if (error) {
+      clearError();
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (isSubmitting) return;
+    if (isLoggingIn) return;
 
-    const result = await login(formData.email, formData.password, redirectTo);
+    clearError();
 
-    if (!result.success && result.errors?.general) {
-      // Form errors are handled by the hook
+    const result = await login(formData.email, formData.password);
+
+    if (result.success) {
+      toast.success("Sesión iniciada correctamente", { autoClose: 1000 });
     }
-    toast.success("Sesión iniciada correctamente", { autoClose: 1000 });
   };
 
-  if (authLoading) {
+  if (isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -92,8 +90,8 @@ export default function LoginPage() {
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
-            {formErrors.general && (
-              <Alert type="error" message={formErrors.general} />
+            {error && (
+              <Alert type="error" message={error} />
             )}
 
             <div>
@@ -109,13 +107,8 @@ export default function LoginPage() {
                 placeholder="Correo electrónico"
                 value={formData.email}
                 onChange={handleInputChange}
-                disabled={isSubmitting}
+                disabled={isLoggingIn}
               />
-              {formErrors.email && (
-                <span className="text-red-500 text-sm px-4">
-                  {formErrors.email}
-                </span>
-              )}
             </div>
 
             <div>
@@ -132,25 +125,19 @@ export default function LoginPage() {
                   placeholder="Contraseña"
                   value={formData.password}
                   onChange={handleInputChange}
-                  error={formErrors.password}
-                  disabled={isSubmitting}
+                  disabled={isLoggingIn}
                 />
                 <button
                   type="button"
                   className="absolute inset-y-0 right-0 px-3 flex items-center"
                   onClick={() => setShowPassword(!showPassword)}
-                  disabled={isSubmitting}
+                  disabled={isLoggingIn}
                 >
                   <span className="text-sm text-gray-500">
                     {showPassword ? "Ocultar" : "Mostrar"}
                   </span>
                 </button>
               </div>
-              {formErrors.password && (
-                <span className="text-red-500 text-sm px-4">
-                  {formErrors.password}
-                </span>
-              )}
             </div>
           </div>
 
@@ -169,10 +156,10 @@ export default function LoginPage() {
             <Button
               type="submit"
               className="group relative w-full flex justify-center"
-              disabled={isSubmitting || !formData.email || !formData.password}
-              loading={isSubmitting}
+              disabled={isLoggingIn || !formData.email || !formData.password}
+              loading={isLoggingIn}
             >
-              {isSubmitting ? "Iniciando sesión..." : "Iniciar Sesión"}
+              {isLoggingIn ? "Iniciando sesión..." : "Iniciar Sesión"}
             </Button>
           </div>
         </form>
