@@ -4,6 +4,7 @@ from datetime import datetime
 
 router = APIRouter()
 
+
 def calcular_nivel_exportador(porcentaje: float):
     if porcentaje >= 85:
         return {"nivel": "excelente", "color": "green", "puede_exportar": True}
@@ -16,6 +17,7 @@ def calcular_nivel_exportador(porcentaje: float):
     else:
         return {"nivel": "crítico", "color": "red", "puede_exportar": False}
 
+
 @router.post("/{form_id}/responder")
 async def responder_termometro(form_id: str, request: Request, current_user: dict = Depends(token_required)):
     try:
@@ -26,7 +28,8 @@ async def responder_termometro(form_id: str, request: Request, current_user: dic
         if not respuestas:
             raise HTTPException(400, "Se requieren las respuestas")
 
-        preguntas_resp = supabase.table('questions').select('*').eq('form_id', form_id).execute()
+        preguntas_resp = supabase.table('questions').select(
+            '*').eq('form_id', form_id).execute()
         preguntas_dict = {p['id']: p for p in preguntas_resp.data}
 
         puntaje_total, puntaje_maximo = 0, 0
@@ -39,7 +42,8 @@ async def responder_termometro(form_id: str, request: Request, current_user: dic
             puntaje_maximo += peso
             puntaje_total += peso if str(val).lower() == "yes" else 0
 
-        porcentaje = (puntaje_total / puntaje_maximo * 100) if puntaje_maximo > 0 else 0
+        porcentaje = (puntaje_total / puntaje_maximo *
+                      100) if puntaje_maximo > 0 else 0
         info_nivel = calcular_nivel_exportador(porcentaje)
 
         # Guardar resultado en supabase
@@ -55,7 +59,8 @@ async def responder_termometro(form_id: str, request: Request, current_user: dic
             "completion_status": "complete",
             "completed_at": datetime.utcnow().isoformat()
         }
-        supabase.table("user_form_scores").upsert(datos_puntaje, on_conflict="user_id,form_id").execute()
+        supabase.table("user_form_scores").upsert(
+            datos_puntaje, on_conflict="user_id,form_id").execute()
 
         return {"exito": True, "termometro": {
             "puntaje_total": puntaje_total,
@@ -65,6 +70,7 @@ async def responder_termometro(form_id: str, request: Request, current_user: dic
         }}
     except Exception as e:
         raise HTTPException(500, f"Error al procesar respuestas: {str(e)}")
+
 
 @router.get("/{form_id}/estado")
 async def ver_estado_termometro(form_id: str, current_user: dict = Depends(token_required)):
@@ -88,7 +94,9 @@ async def ver_estado_termometro(form_id: str, current_user: dict = Depends(token
             "completado_en": datos["completed_at"]
         }}
     except Exception as e:
-        raise HTTPException(500, f"Error al obtener estado del termómetro: {str(e)}")
+        raise HTTPException(
+            500, f"Error al obtener estado del termómetro: {str(e)}")
+
 
 @router.get("/mis-resultados")
 async def ver_mis_resultados(current_user: dict = Depends(token_required)):

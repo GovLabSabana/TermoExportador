@@ -32,22 +32,23 @@ export async function POST(request) {
 
     const data = await response.json()
 
-    if (response.ok && data.success !== false) {
+    if (response.ok && data.exito !== false) {
       // Registration successful
-      const user = data.usuario || data.user || { email }
+      const usuario = data.usuario || { email }
       
       // If the backend returns a token, set cookies for auto-login after registration
       if (data.access_token) {
-        await setAuthCookies(data.access_token, user)
+        await setAuthCookies(data.access_token, usuario)
       }
       
       return createSuccessResponse({
-        message: data.message || 'Registration successful',
-        user,
+        exito: true,
+        mensaje: data.mensaje || 'Registration successful',
+        usuario,
         autoLogin: !!data.access_token
       })
     } else {
-      const errorMessage = data.message || data.detail || authErrorMessages.SERVER_ERROR
+      const errorMessage = data.mensaje || data.detail || authErrorMessages.SERVER_ERROR
       return createErrorResponse(errorMessage, response.status || 400)
     }
   } catch (error) {

@@ -17,7 +17,8 @@ export async function POST(request) {
     await clearAuthCookies()
     
     return createSuccessResponse({
-      message: 'Logout successful'
+      exito: true,
+      mensaje: 'Logout successful'
     })
   } catch (error) {
     console.error('Logout API error:', error)

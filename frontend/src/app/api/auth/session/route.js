@@ -7,12 +7,14 @@ export async function GET() {
     
     if (session) {
       return createSuccessResponse({
-        user: session.user,
+        exito: true,
+        usuario: session.user,
         isAuthenticated: true
       })
     } else {
       return createSuccessResponse({
-        user: null,
+        exito: true,
+        usuario: null,
         isAuthenticated: false
       })
     }

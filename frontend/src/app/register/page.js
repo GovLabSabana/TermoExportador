@@ -75,7 +75,7 @@ export default function Register() {
 
     const result = await register(formData.email, formData.password);
 
-    if (result.success) {
+    if (result.exito) {
       if (result.autoLogin) {
         // Auto-logged in after registration
         toast.success("Account created and logged in successfully!");

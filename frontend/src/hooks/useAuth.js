@@ -49,8 +49,8 @@ export function AuthProvider({ children, initialSession = null }) {
 
       const data = await response.json();
 
-      if (data.success && data.isAuthenticated && data.user) {
-        setUser(data.user);
+      if (data.exito && data.isAuthenticated && data.usuario) {
+        setUser(data.usuario);
         setIsAuthenticated(true);
       } else {
         setUser(null);
@@ -68,7 +68,7 @@ export function AuthProvider({ children, initialSession = null }) {
   const login = useCallback(async (email, password) => {
     if (!email || !password) {
       setError("Email and password are required");
-      return { success: false, error: "Email and password are required" };
+      return { exito: false, error: "Email and password are required" };
     }
 
     setIsLoggingIn(true);
@@ -85,22 +85,23 @@ export function AuthProvider({ children, initialSession = null }) {
       });
 
       const data = await response.json();
+      console.log(data);
 
-      if (response.ok && data.success && data.user) {
-        setUser(data.user);
+      if (response.ok && data.exito && data.usuario) {
+        setUser(data.usuario);
         setIsAuthenticated(true);
-        return { success: true };
+        return { exito: true };
       } else {
         const errorMessage =
           data.error || authErrorMessages.INVALID_CREDENTIALS;
         setError(errorMessage);
-        return { success: false, error: errorMessage };
+        return { exito: false, error: errorMessage };
       }
     } catch (error) {
       console.error("Login error:", error);
       const errorMessage = authErrorMessages.NETWORK_ERROR;
       setError(errorMessage);
-      return { success: false, error: errorMessage };
+      return { exito: false, error: errorMessage };
     } finally {
       setIsLoggingIn(false);
     }
@@ -109,7 +110,7 @@ export function AuthProvider({ children, initialSession = null }) {
   const register = useCallback(async (email, password) => {
     if (!email || !password) {
       setError("Email and password are required");
-      return { success: false, error: "Email and password are required" };
+      return { exito: false, error: "Email and password are required" };
     }
 
     setIsRegistering(true);
@@ -127,27 +128,27 @@ export function AuthProvider({ children, initialSession = null }) {
 
       const data = await response.json();
 
-      if (response.ok && data.success) {
+      if (response.ok && data.exito) {
         // If auto-login after registration
-        if (data.autoLogin && data.user) {
-          setUser(data.user);
+        if (data.autoLogin && data.usuario) {
+          setUser(data.usuario);
           setIsAuthenticated(true);
         }
         return {
-          success: true,
+          exito: true,
           autoLogin: data.autoLogin,
-          message: data.message,
+          mensaje: data.mensaje,
         };
       } else {
         const errorMessage = data.error || "Registration failed";
         setError(errorMessage);
-        return { success: false, error: errorMessage };
+        return { exito: false, error: errorMessage };
       }
     } catch (error) {
       console.error("Register error:", error);
       const errorMessage = authErrorMessages.NETWORK_ERROR;
       setError(errorMessage);
-      return { success: false, error: errorMessage };
+      return { exito: false, error: errorMessage };
     } finally {
       setIsRegistering(false);
     }

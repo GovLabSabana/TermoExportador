@@ -106,14 +106,14 @@ export const authApi = {
       });
 
       return {
-        success: true,
+        exito: true,
         data: response,
-        user: response.usuario,
-        message: response.message,
+        usuario: response.usuario,
+        mensaje: response.mensaje,
       };
     } catch (error) {
       return {
-        success: false,
+        exito: false,
         error: error.message,
         status: error.status,
       };
@@ -127,20 +127,20 @@ export const authApi = {
         password,
       });
 
-      if (response.success && response.access_token) {
+      if (response.exito && response.access_token) {
         cookieUtils.setToken(response.access_token);
       }
 
       return {
-        success: true,
+        exito: true,
         data: response,
-        user: response.user,
+        usuario: response.usuario,
         token: response.access_token,
-        message: response.message,
+        mensaje: response.mensaje,
       };
     } catch (error) {
       return {
-        success: false,
+        exito: false,
         error: error.message,
         status: error.status,
       };
@@ -169,8 +169,8 @@ export const authApi = {
       cookieUtils.removeToken();
 
       return {
-        success: true,
-        message: "Logged out successfully",
+        exito: true,
+        mensaje: "Logged out successfully",
         backendResponse: logoutResponse,
       };
     } catch (error) {
@@ -178,7 +178,7 @@ export const authApi = {
       cookieUtils.removeToken();
 
       return {
-        success: false,
+        exito: false,
         error: error.message,
       };
     }
@@ -193,13 +193,13 @@ export const authApi = {
       });
 
       return {
-        success: true,
-        user: response.user,
+        exito: true,
+        usuario: response.usuario,
         valid: true,
       };
     } catch (error) {
       return {
-        success: false,
+        exito: false,
         valid: false,
         error: error.message,
       };
@@ -223,14 +223,14 @@ export const authApi = {
       }
 
       return {
-        success: true,
+        exito: true,
         token: response.access_token,
-        user: response.user,
+        usuario: response.usuario,
       };
     } catch (error) {
       cookieUtils.removeToken();
       return {
-        success: false,
+        exito: false,
         error: error.message,
       };
     }
@@ -241,13 +241,13 @@ export const authApi = {
       const response = await apiClient.get("/auth/me");
 
       return {
-        success: true,
-        user: response,
+        exito: true,
+        usuario: response,
         data: response,
       };
     } catch (error) {
       return {
-        success: false,
+        exito: false,
         error: error.message,
         status: error.status,
       };

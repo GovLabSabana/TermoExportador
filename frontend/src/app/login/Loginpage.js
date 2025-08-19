@@ -53,7 +53,7 @@ export default function LoginPage() {
 
     const result = await login(formData.email, formData.password);
 
-    if (result.success) {
+    if (result.exito) {
       toast.success("Sesión iniciada correctamente", { autoClose: 1000 });
     }
   };
